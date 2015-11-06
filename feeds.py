@@ -4,6 +4,8 @@ Python web application that merges RSS feeds.
 """
 
 from multiprocessing.pool import ThreadPool
+from time import mktime
+from functools import reduce
 
 import feedparser
 from flask import Flask, render_template
@@ -25,12 +27,13 @@ feeds = [
 
 
 @app.route('/')
-def main(threaded=True):
+def main():
     pool = ThreadPool()
     feed_objects = pool.map(feedparser.parse, feeds)
-    return feed_objects
-    #return render_template('feed.xml', name=name, description=description,
-    #                       link=link, feed_url=feed_url, items=items)
+    entries = reduce(lambda l, f: l + f.entries, feed_objects, [])
+    entries.sort(key=lambda e: mktime(e.published_parsed), reverse=True)
+    return render_template('feed.xml', name=name, description=description,
+                           link=link, feed_url=feed_url, items=entries)
 
 
 if __name__ == '__main__':
