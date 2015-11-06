@@ -3,10 +3,9 @@
 Python web application that merges RSS feeds.
 """
 
-import xml.etree.ElementTree as ET
+from multiprocessing.pool import ThreadPool
 
-import requests
-
+import feedparser
 from flask import Flask, render_template
 app = Flask(__name__)
 
@@ -25,22 +24,14 @@ feeds = [
 ]
 
 
-def get_feed(url):
-    """Return an iterable of "item" elements from the feed at the URL."""
-    resp = requests.get(url)
-    root = ET.fromstring(resp.text)
-    yield from root.findall(r'./channel/item')
-
-
 @app.route('/')
-def main():
-    item_xml = []
-    for url in feeds:
-        item_xml += get_feed(url)
-    items = [ET.tostring(x, encoding='unicode') for x in item_xml]
-    return render_template('feed.xml', name=name, description=description,
-                           link=link, feed_url=feed_url, items=items)
+def main(threaded=True):
+    pool = ThreadPool()
+    feed_objects = pool.map(feedparser.parse, feeds)
+    return feed_objects
+    #return render_template('feed.xml', name=name, description=description,
+    #                       link=link, feed_url=feed_url, items=items)
 
 
 if __name__ == '__main__':
-   app.run(debug=True)
+    app.run(debug=True)
