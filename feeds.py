@@ -37,4 +37,8 @@ def main():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    import sys
+    if 'prod' in sys.argv:
+        app.run(host='0.0.0.0:58008')
+    else:
+        app.run(debug=True)
